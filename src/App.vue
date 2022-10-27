@@ -55,28 +55,26 @@ export default defineComponent({
       ListPokemons: [] as Pokemon[],
     });
 
-    function getData() {
-      fetch("https://pokeapi.co/api/v2/pokemon")
-        .then((res) => res.json())
-        .then((data) => {
-          data.results.forEach((data: Pokemon) => {
-            const pokemon: Pokemon = {} as Pokemon;
-            pokemon.name = data.name;
-            pokemon.url = data.url;
-            fetch(pokemon.url)
-              .then((res) => res.json())
-              .then((data) => {
-                pokemon.types = data.types[0].type.name;
-                pokemon.ability = { name: data.abilities[0].ability.name, desc: "" };
-                fetch(data.abilities[0].ability.url)
-                  .then((res) => res.json())
-                  .then((data) => {
-                    pokemon.ability.desc = data.effect_entries[0].effect;
-                    state.ListPokemons.push(pokemon);
-                  });
-              });
-          });
-        });
+    async function getData() {
+      const pokemonsResp = await fetch("https://pokeapi.co/api/v2/pokemon");
+      const pokemonsList = await pokemonsResp.json();
+
+      pokemonsList.results.forEach(async (element: any) => {
+        const pokemon: Pokemon = {} as Pokemon;
+        pokemon.name = element.name;
+        pokemon.url = element.url;
+
+        const abilityResp = await fetch(element.url);
+        const abilityData = await abilityResp.json();
+        pokemon.types = abilityData.types[0].type.name;
+        pokemon.ability = { name: abilityData.abilities[0].ability.name, desc: "" };
+
+        const descResp = await fetch(abilityData.abilities[0].ability.url);
+        const descData = await descResp.json();
+        pokemon.ability.desc = descData.effect_entries[0].effect;
+
+        state.ListPokemons.push(pokemon);
+      });
     }
 
     getData();
